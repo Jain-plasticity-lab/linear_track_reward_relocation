@@ -10,8 +10,8 @@
 #include "data.h"
 
 /*
- * --------Timing mode--------
- * defaults to millis which can run upto ~50days before encountering overflow and restarts from 0
+ * Timing mode
+ * defaults to millis which can run upto ~49days before encountering overflow and restarts from 0
  * beware while using micros as overflow occurs rather quickly at around 70min and restarts from 0
  */
 const bool TIME_IN_MICROSECONDS = false;
@@ -31,7 +31,7 @@ const byte LED_RUNTIME = 13;
 const byte LED_BLINK_PIN = 12;
 
 // Serial transfer baud rate;
-const unsigned long BAUD_RATE = 115200;
+const unsigned long BAUD_RATE = 115200UL;
 
 /*Identifiers for serial data transfer*/
 const byte SIDE_A = 0;
@@ -48,11 +48,13 @@ const bool TOUCH_ACTIVE_LOW = false;
 const bool SOLENOID_ACTIVE_HIGH = false;
 
 /*Time parameters - type dependent on tNow parameter in*/
+const unsigned long CLOCK_TOLERANCE = 100UL;          //tolerance range if timing function jumps? would subsequent calls be resolved?
+
 const unsigned long DELAY_START = 4UL * 1000UL;      // time to start void loop()
-const unsigned long RUN_TIME = 20UL * 60UL * 1000UL; // time since above delay completion
+const unsigned long RUN_TIME_DURATION = 20UL * 60UL * 1000UL; // time since above delay completion
 
 const unsigned long MIN_IR_BREAK = 5UL;           // duration for signal persistance to avoid transient spike
-const unsigned long SOL_DEFAULT = 80UL;           // duration of solenoid valve release
-const unsigned long LED_BLINK_A_INTERVAL = 500UL; // led blink on interval
+const unsigned long SOLENOID_DURATION = 80UL;           // duration of solenoid valve release
+const unsigned long LED_BLINK_INTERVAL = 500UL; // led blink on interval
 
 #endif
