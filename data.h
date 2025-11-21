@@ -9,7 +9,29 @@
 enum Mode
 {
 	MODE_A,
-	MODE_B
+	MODE_B,
+};
+
+struct RuntimeState
+{
+	byte led_pin;
+	bool runTimeFlag;
+	unsigned long tNow;
+	unsigned long tLast;
+	unsigned long tStart;
+	unsigned long tRuntimeStart;
+	unsigned long duration;
+	unsigned long delay;
+};
+
+struct BlinkLEDState
+{
+	byte pin;
+	byte side;
+	bool ledBlinkState;
+	unsigned long blinkInterval;
+	unsigned long tLEDon;
+	unsigned long tLEDoff;
 };
 
 struct IRState
