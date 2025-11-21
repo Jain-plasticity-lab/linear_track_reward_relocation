@@ -59,7 +59,7 @@ void digitalWriteCorrected(byte pin, bool state, bool activeLogicLow = false)
   <byte> pin : digital pin to write
   <bool> state : HIGH or LOW, or true or false, or 1 or 0
   */
-  digital.Write(pin, activeLogicLow ? !state : state);
+  digitalWrite(pin, activeLogicLow ? !state : state);
 }
 
 void initRuntime(RuntimeState &runtimeState, byte pin, unsigned long duration = RUN_TIME_DURATION, unsigned long delay = DELAY_START)
@@ -75,7 +75,7 @@ void initRuntime(RuntimeState &runtimeState, byte pin, unsigned long duration = 
   runtimeState.duration = duration;
   runtimeState.delay = delay;
   digitalWrite(runtimeState.led_pin, OFF);
-  runtime.tStart = currentTime();
+  runtimeState.tStart = currentTime();
 }
 
 void updateRuntime(RuntimeState &runtimeState)
@@ -163,7 +163,7 @@ void initIR(IRState &irDetector, byte pin, byte side)
   pinMode(pin, INPUT_PULLUP);
   irDetector.pin = pin;
   irDetector.side = side;
-  irDetector.currentRead = readCorrected(pin, IR_ACTIVE_LOW);
+  irDetector.currentRead = digitalReadCorrected(pin, IR_ACTIVE_LOW);
   irDetector.lastRead = false;
   irDetector.currentPersistant = false;
   irDetector.lastPersistant = false;
@@ -185,7 +185,7 @@ void detectIR(IRState &irDetector, unsigned long tNow)
   <unsigned long> tNow : current time of execution
   <unsigned long> tRuntimeStart : time of runtime start
   */
-  bool v = readCorrected(irDetector.pin, IR_ACTIVE_LOW);
+  bool v = digitalReadCorrected(irDetector.pin, IR_ACTIVE_LOW);
   if ((irDetector.currentRead || irDetector.lastRead) && v && !irDetector.inBreak)
   {
     irDetector.tStart = tNow;
