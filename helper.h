@@ -33,9 +33,12 @@ unsigned long currentTime(unsigned long tLast = 0, unsigned long tolerance = CLO
   micros() encounters overflow in ~70min
   */
   unsigned long tNow = time_in_microseconds ? micros() : millis();
-  while (tNow - tLast > tolerance || tNow < tLast)
+  if (tLast != -1) 
   {
-    tNow = time_in_microseconds ? micros() : millis();
+    while (tNow - tLast > tolerance || tNow < tLast)
+    {
+      tNow = time_in_microseconds ? micros() : millis();
+    }
   }
   return tNow;
 }
@@ -70,12 +73,15 @@ void initRuntime(RuntimeState &runtimeState, byte pin, unsigned long duration = 
   <byte> pin : led indicator pin for runtime - HIGH when on, LOW when off
   <unsigned long> duration : set total duration for runtime execution, defaults to RUN_TIME_DURATION
   */
+  pinMode(pin, OUTPUT);
   runtimeState.led_pin  = pin;
   runtimeState.runTimeFlag = false;
   runtimeState.duration = duration;
   runtimeState.delay = delay;
   digitalWrite(runtimeState.led_pin, OFF);
-  runtimeState.tStart = currentTime();
+  runtimeState.tStart = currentTime(-1);
+  runtimeState.tLast = -1;
+  return;
 }
 
 void updateRuntime(RuntimeState &runtimeState)
@@ -85,13 +91,12 @@ void updateRuntime(RuntimeState &runtimeState)
   <struct RuntimeState> runtimeState : runtime struct variable
   */
   runtimeState.tNow = currentTime(runtimeState.tLast);
-  
   //exit condition
   if (runtimeState.tNow - runtimeState.tRuntimeStart >= runtimeState.duration)
   {
     digitalWrite(runtimeState.led_pin, OFF);
-    digitalWriteCorrected(SOLENOID_A_PIN, OFF, SOLENOID_ACTIVE_HIGH);
-    digitalWriteCorrected(SOLENOID_B_PIN, OFF, SOLENOID_ACTIVE_HIGH);
+    digitalWriteCorrected(SOLENOID_A_PIN, OFF, SOLENOID_ACTIVE_LOW);
+    digitalWriteCorrected(SOLENOID_B_PIN, OFF, SOLENOID_ACTIVE_LOW);
     runtimeState.runTimeFlag = false;
 
     // log
@@ -124,8 +129,11 @@ void initBlinkLED(BlinkLEDState &ledState, byte pin, byte side, unsigned long bl
   <byte> pin : led pin
   <unsigned long> blinkInterval : blink duration
   */
+  pinMode(pin, OUTPUT);
   ledState.pin = pin;
   ledState.side = side;
+  ledState.tLEDon = 0;
+  ledState.tLEDoff = 0;
   ledState.ledBlinkState = false; 
   ledState.blinkInterval = blinkInterval;
 }
@@ -137,13 +145,13 @@ void updateBlinkLED(BlinkLEDState &ledState, unsigned long tNow)
   <struct BlinkLEDState> ledState : struct for led state parameters
   <unsigned long> tNow : current time
   */
-  if (ledState.ledBlinkState && tNow - ledState.tLEDon> ledState.blinkInterval)
+  if (ledState.ledBlinkState && (tNow - ledState.tLEDon > ledState.blinkInterval))
   {
     digitalWrite(ledState.pin, OFF);
     ledState.tLEDoff = tNow;
     ledState.ledBlinkState = false;
   }
-  if (!ledState.ledBlinkState && tNow - ledState.tLEDon > ledState.blinkInterval)
+  if (!ledState.ledBlinkState && (tNow - ledState.tLEDoff > ledState.blinkInterval))
   {
     digitalWrite(ledState.pin, ON);
     ledState.tLEDon = tNow;
@@ -281,7 +289,9 @@ void initSolenoid(SolenoidState &solenoidValve, byte pin, byte side)
   <byte> side : side identifier
   */
   pinMode(pin, OUTPUT);
-  digitalWriteCorrected(pin, OFF, SOLENOID_ACTIVE_HIGH);
+  digitalWriteCorrected(pin, OFF, SOLENOID_ACTIVE_LOW);
+  solenoidValve.pin = pin;
+  solenoidValve.side = side;
   solenoidValve.open = false;
 }
 
@@ -303,7 +313,7 @@ void activateSolenoid(SolenoidState &solenoidValve, unsigned long tNow, unsigned
     solenoidValve.open = true;
     solenoidValve.tOpen = tNow;
     solenoidValve.duration = duration;
-    digitalWriteCorrected(solenoidValve.pin, ON, SOLENOID_ACTIVE_HIGH);
+    digitalWriteCorrected(solenoidValve.pin, ON, SOLENOID_ACTIVE_LOW);
 
     // log
     eventLog(solenoidValve.side, SOLENOID, ON, tNow);
@@ -322,7 +332,7 @@ void updateSolenoid(SolenoidState &solenoidValve, unsigned long tNow)
   {
     solenoidValve.open = false;
     solenoidValve.tClose = tNow;
-    digitalWriteCorrected(solenoidValve.pin, OFF, SOLENOID_ACTIVE_HIGH);
+    digitalWriteCorrected(solenoidValve.pin, OFF, SOLENOID_ACTIVE_LOW);
 
     // log
     eventLog(solenoidValve.side, SOLENOID, OFF, tNow);
