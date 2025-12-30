@@ -103,6 +103,7 @@ void initTTL(TTLState &ttlState,
   ttlState.pin = pin;
   ttlState.mode = mode;
   ttlState.state = false;
+  ttlState.detect = false;
   ttlState.pulseState = false;
   ttlState.tTTLon = -1;
   ttlState.tPulseon = -1;
@@ -164,7 +165,7 @@ void sendTTL(TTLState* ttlState,
   <unsigned long> tNow : current time
   <unsigned long> freq : freq of ttl pulse
   */
-  if (!ttlState->state)
+  if (!ttlState->state && ttlState->mode == OUTPUT)
   {
     digitalWrite(ttlState->pin, HIGH);
     ttlState->state = true;
@@ -189,28 +190,36 @@ bool detectTTL(TTLState *ttlState,
   <bool> : true if TTL is high in case of completeSquarePulse is set to false, 
            else true only when square pulse of specific duration is detected 
   */
-  bool v = digitalRead(ttlState->pin);
-  if (!ttlState->state && v)
+  if (ttlState->mode == INPUT || ttlState->mode == INPUT_PULLUP)
   {
-    ttlState->state = true;
-    ttlState->tTTLon = tNow;
-    if (!completeSquarePulse) {
-      return true;
-    }
-    return false;
-  }
-  else if (ttlState->state && !v)
-  { 
-    unsigned long duration = tNow - ttlState->tTTLon;
-    ttlState->state = false;
-    ttlState->tTTLon = -1;
-    if(duration >= ttlState->pulseWidth)
+    bool v = digitalRead(ttlState->pin);
+    if (!ttlState->state && v)
     {
-      return true;
+      ttlState->state = true;
+      ttlState->tTTLon = tNow;
+      if (!completeSquarePulse) {
+        ttlState->detect = true;
+        return true;
+      }
+      ttlState->detect = false;
+      return false;
     }
+    else if (ttlState->state && !v)
+    { 
+      unsigned long duration = tNow - ttlState->tTTLon;
+      ttlState->state = false;
+      ttlState->tTTLon = -1;
+      if(duration >= ttlState->pulseWidth)
+      {
+        ttlState->detect = true;
+        return true;
+      }
+      ttlState->detect = false;
+      return false;
+    }
+    ttlState->detect = false;
     return false;
   }
-  return false;
 }
 
 void initRuntime(RuntimeState &runtimeState,
@@ -362,8 +371,6 @@ void initIR(IRState &irDetector,
   irDetector.proxyLEDPin = proxyLEDPin;
   irDetector.currentRead = digitalReadCorrected(pin, IR_ACTIVE_LOW);
   irDetector.lastRead = false;
-  irDetector.currentPersistant = false;
-  irDetector.lastPersistant = false;
   irDetector.inBreak = false;
   irDetector.breakEvent = false;
   irDetector.breakEventMutable = false;
@@ -414,12 +421,6 @@ void detectIR(IRState &irDetector,
     eventLog(irDetector.side, IR, ON, tNow);
     digitalWrite(irDetector.proxyLEDPin, HIGH);
     sendTTL(irDetector.outputTrigger, tNow, irDetector.ttlPulsePeriod);
-  }
-  if (irDetector.breakEventMutable)
-  {
-    irDetector.lastPersistant = irDetector.currentPersistant;
-    irDetector.currentPersistant = true;
-    irDetector.breakEventMutable = false;
   }
   irDetector.lastRead = irDetector.currentRead;
   irDetector.currentRead = v;
