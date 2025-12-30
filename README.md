@@ -3,7 +3,7 @@ Microcontroller code to enable automated behavior setup with TTL I/O for synchro
 
 # Setup
  - Ensure all files are under a parent dir with name 'linear_track_reward_relocation'
- - Define connections to and from the microcontroller under config.h
+ - Define connections to and from the microcontroller as defined under config.h or update accordingly
  - Adjust required timing parameters in config.h
  - Compile and load onto a compatible arduino with connections as defined in config.h
  - Optional input trigger from a neural data acquisition system - start can be defined by the rising edge or a complete square pulse.
